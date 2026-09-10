@@ -1,0 +1,8 @@
+# Local environment values and runtime credentials
+.env
+.env.local
+.env.*.local
+
+# Local editor / operating-system files
+.DS_Store
+Thumbs.db

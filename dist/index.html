@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#111114" />
+  <title>게임 점수판</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23111114'/%3E%3Cpath d='M8 18h16l-2 7H10z' fill='%23ffdf39'/%3E%3Cpath d='M12 13h8v5h-8z' fill='%237b5cff'/%3E%3C/svg%3E" />
+  <style>
+    :root { --ink:#111114; --paper:#f8f8f6; --line:#e3e3df; --muted:#777779; --yellow:#ffdf39; --violet:#7557ee; --pink:#f85a91; --cyan:#35cbe6; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--paper); font-family: Inter, Pretendard, "Apple SD Gothic Neo", system-ui, sans-serif; letter-spacing:-.025em; }
+    button, input { font:inherit; }
+    button { cursor:pointer; }
+    .app { max-width:850px; margin:auto; padding:34px 22px 76px; }
+    header { display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid var(--ink); padding-bottom:20px; }
+    h1 { margin:0; font-size:clamp(2rem,6vw,3.3rem); letter-spacing:-.075em; line-height:1; }
+    .add { border:0; background:var(--yellow); width:46px; height:46px; border-radius:50%; font-size:30px; line-height:1; font-weight:400; box-shadow:3px 3px 0 var(--ink); transition:transform .15s, box-shadow .15s; }
+    .add:hover { transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink); }
+    .rank-label { display:flex; justify-content:space-between; margin:30px 0 12px; color:var(--muted); font-size:.84rem; font-weight:700; letter-spacing:.03em; }
+    .list { display:grid; gap:10px; }
+    .person { width:100%; border:1.5px solid var(--ink); background:white; display:grid; grid-template-columns:58px 1fr auto; align-items:center; text-align:left; min-height:82px; padding:0 20px 0 0; border-radius:13px; transition:transform .16s, box-shadow .16s; }
+    .person:hover { transform:translate(-2px,-2px); box-shadow:4px 4px 0 var(--ink); }
+    .rank { height:100%; display:grid; place-items:center; font-size:1.15rem; font-weight:800; background:var(--person-color); border-radius:11px 0 0 11px; }
+    .person-main { padding:0 18px; min-width:0; }
+    .name { display:block; font-size:1.12rem; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .sub { display:block; color:var(--muted); margin-top:4px; font-size:.82rem; }
+    .avg { text-align:right; font-size:1.35rem; font-weight:850; }
+    .avg small { display:block; color:var(--muted); font-size:.72rem; font-weight:600; margin-bottom:2px; }
+    .empty { margin-top:58px; border:2px dashed #bababb; border-radius:16px; padding:54px 20px; text-align:center; background:#fff; color:var(--muted); line-height:1.65; }
+    .empty strong { color:var(--ink); display:block; font-size:1.1rem; }
+    .detail { display:none; }
+    .back { border:0; background:transparent; padding:0; color:var(--muted); font-weight:700; font-size:.94rem; }
+    .detail-head { display:flex; align-items:center; gap:13px; margin:25px 0 22px; }
+    .detail-head h2 { margin:0; font-size:clamp(2rem,7vw,3.6rem); letter-spacing:-.07em; overflow-wrap:anywhere; }
+    .detail-head .add { margin-left:auto; flex:0 0 auto; }
+    .icon-action { border:1.5px solid var(--ink); background:#fff; min-width:36px; height:36px; border-radius:8px; font-weight:800; }
+    .icon-action.danger { background:#ffe1ea; }
+    .stats { display:grid; grid-template-columns:repeat(3,1fr); border:1.5px solid var(--ink); border-radius:13px; overflow:hidden; background:white; }
+    .stat { padding:18px 14px; border-right:1.5px solid var(--ink); }
+    .stat:last-child { border:0; }
+    .stat-label { display:block; color:var(--muted); font-size:.78rem; margin-bottom:8px; }
+    .stat b { font-size:1.5rem; }
+    .chart-box { position:relative; margin-top:20px; min-height:280px; padding:22px 18px 12px; border:1.5px solid var(--ink); border-radius:13px; background:#fff; }
+    .chart-title { margin:0 0 12px; font-size:1rem; }
+    #chart { display:block; width:100%; height:205px; overflow:visible; }
+    .history { margin-top:24px; }
+    .history h3 { font-size:1rem; margin:0 0 10px; }
+    .score-row { display:flex; justify-content:space-between; border-top:1px solid var(--line); padding:12px 2px; font-size:.93rem; }
+    .score-row b { font-size:1.05rem; }
+    .score-actions { display:flex; gap:6px; align-items:center; }
+    .score-actions .icon-action { min-width:30px; height:30px; font-size:.8rem; }
+    dialog { width:min(420px,calc(100% - 32px)); border:2px solid var(--ink); border-radius:16px; padding:0; box-shadow:8px 8px 0 var(--ink); }
+    dialog::backdrop { background:rgba(17,17,20,.42); }
+    form { padding:25px; }
+    form h3 { margin:0 0 20px; font-size:1.45rem; }
+    label { display:block; margin:14px 0 6px; font-size:.85rem; font-weight:700; }
+    input { width:100%; padding:12px; border:1.5px solid var(--ink); border-radius:8px; background:#fff; font-size:1rem; }
+    .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:22px; }
+    .secondary, .primary { padding:10px 15px; border:1.5px solid var(--ink); border-radius:8px; font-weight:800; }
+    .secondary { background:white; } .primary { background:var(--yellow); }
+    .toast { position:fixed; z-index:3; inset:0; display:none; place-items:center; pointer-events:none; font-size:clamp(1.4rem,5vw,2.2rem); font-weight:900; }
+    .toast span { background:var(--pink); border:2px solid var(--ink); box-shadow:6px 6px 0 var(--ink); padding:20px 26px; border-radius:13px; }
+    .loading { position:fixed; inset:0; z-index:10; display:grid; place-items:center; background:var(--paper); transition:opacity .25s; }
+    .u { width:54px; height:54px; border:8px solid var(--ink); border-top-color:transparent; border-radius:50%; animation:spin .75s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    @media (max-width:500px) { .app{padding:25px 16px 56px}.person{grid-template-columns:48px 1fr auto;padding-right:13px}.person-main{padding:0 12px}.stats{grid-template-columns:1fr}.stat{display:flex;justify-content:space-between;align-items:center;border-right:0;border-bottom:1.5px solid var(--ink);padding:13px 16px}.stat-label{margin:0}.stat b{font-size:1.32rem} }
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading" aria-label="불러오는 중"><div class="u"></div></div>
+  <main class="app">
+    <section id="home"><header><h1>게임 점수판</h1><button class="add" id="addUser" aria-label="새 사용자 추가">+</button></header><div class="rank-label"><span>평균 점수 순위</span><span id="count"></span></div><div class="list" id="list"></div><div class="empty" id="empty"><strong>아직 사용자가 없어요.</strong>오른쪽 위 <b>+</b>를 눌러 친구를 추가하세요.</div></section>
+    <section class="detail" id="detail"><button class="back" id="back">← 순위표로 돌아가기</button><div class="detail-head"><h2 id="detailName"></h2><button class="icon-action" id="editPlayer" aria-label="이름 수정">편집</button><button class="icon-action danger" id="deletePlayer" aria-label="사용자 삭제">삭제</button><button class="add" id="addScore" aria-label="새 점수 추가">+</button></div><div class="stats"><div class="stat"><span class="stat-label">평균 점수</span><b id="mean">—</b></div><div class="stat"><span class="stat-label">최고점</span><b id="max">—</b></div><div class="stat"><span class="stat-label">최하점</span><b id="min">—</b></div></div><div class="chart-box"><h3 class="chart-title">점수 추이</h3><svg id="chart" viewBox="0 0 600 205" preserveAspectRatio="none" aria-label="점수 추이 그래프"></svg><div id="noScores" class="empty" style="margin:18px 0 0;padding:28px">아직 기록이 없어요. <b>+</b>를 눌러 첫 점수를 남겨보세요.</div></div><div class="history" id="history"></div></section>
+  </main>
+  <dialog id="userDialog"><form method="dialog" id="userForm"><h3>새 친구 추가</h3><label for="userName">이름</label><input id="userName" required maxlength="20" placeholder="예: 민준" autocomplete="off" /><div class="actions"><button class="secondary" value="cancel">취소</button><button class="primary" value="default">추가하기</button></div></form></dialog>
+  <dialog id="scoreDialog"><form method="dialog" id="scoreForm"><h3>새 게임 기록</h3><label for="score">점수</label><input id="score" type="number" required step="1" placeholder="예: 1280" inputmode="numeric" /><div class="actions"><button class="secondary" value="cancel">취소</button><button class="primary" value="default">기록하기</button></div></form></dialog>
+  <div class="toast" id="toast"><span>저장에 실패했어요!!!</span></div>
+  <!-- Legacy localStorage implementation retained as a reference; it is not executed. -->
+  <script type="text/plain">
+    const KEY='game-scoreboard-v1', colors=['#ffdc36','#f85a91','#7557ee','#35cbe6','#8ddb62','#ff9e4a'];
+    let people=[], current=null;
+    const $=s=>document.querySelector(s);
+    function save(){try{localStorage.setItem(KEY,JSON.stringify(people));}catch(e){$('#toast').style.display='grid';setTimeout(()=>$('#toast').style.display='none',2200)}}
+    function average(p){return p.scores.length ? p.scores.reduce((a,b)=>a+b.value,0)/p.scores.length : 0}
+    function renderHome(){const sorted=[...people].sort((a,b)=>average(b)-average(a)); $('#count').textContent=people.length?`${people.length}명`:' '; $('#empty').style.display=people.length?'none':'block'; $('#list').innerHTML=sorted.map((p,i)=>`<button class="person" data-id="${p.id}" style="--person-color:${colors[i%colors.length]}"><span class="rank">${i+1}</span><span class="person-main"><span class="name">${esc(p.name)}</span><span class="sub">${p.scores.length?`${p.scores.length}개의 기록`:'기록 없음'}</span></span><span class="avg"><small>평균</small>${p.scores.length?fmt(average(p)):'—'}</span></button>`).join(''); document.querySelectorAll('.person').forEach(b=>b.onclick=()=>openDetail(b.dataset.id));}
+    function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML} function fmt(n){return Math.round(n).toLocaleString('ko-KR')}
+    function openDetail(id){current=people.find(p=>p.id===id); if(!current)return; $('#home').style.display='none';$('#detail').style.display='block';$('#detailName').textContent=current.name; renderDetail();}
+    function renderDetail(){const s=current.scores.map(x=>x.value); const has=s.length; $('#mean').textContent=has?fmt(average(current)):'—';$('#max').textContent=has?fmt(Math.max(...s)):'—';$('#min').textContent=has?fmt(Math.min(...s)):'—';$('#noScores').style.display=has?'none':'block'; $('#history').innerHTML=has?`<h3>기록 ${s.length}개</h3>${[...current.scores].reverse().map((x,i)=>`<div class="score-row"><span>${new Date(x.at).toLocaleDateString('ko-KR',{month:'long',day:'numeric'})} · 최근 ${i+1}번째</span><b>${fmt(x.value)}점</b></div>`).join('')}`:'';drawChart(s);}
+    function drawChart(values){const svg=$('#chart');if(!values.length){svg.innerHTML='';return} const w=600,h=205,p=25,min=Math.min(...values),max=Math.max(...values),range=max-min||1; const pts=values.map((v,i)=>[p+(w-p*2)*(values.length===1?.5:i/(values.length-1)),h-p-(h-p*2)*(v-min)/range]); let html=`<defs><linearGradient id="rainbow" x1="0" x2="1"><stop stop-color="#f85a91"/><stop offset=".25" stop-color="#ff9e4a"/><stop offset=".5" stop-color="#ffdc36"/><stop offset=".75" stop-color="#35cbe6"/><stop offset="1" stop-color="#7557ee"/></linearGradient></defs><path d="M${p} ${h-p}H${w-p}" stroke="#e5e5e5"/><path d="M${p} ${p}H${w-p}" stroke="#e5e5e5"/>`; if(values.length===1){html+=`<circle cx="${pts[0][0]}" cy="${pts[0][1]}" r="8" fill="#7557ee" stroke="#111114" stroke-width="2"/>`}else{html+=`<path d="M${pts.map(q=>q.join(' ')).join(' L')}" fill="none" stroke="url(#rainbow)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>${pts.map((q,i)=>`<circle cx="${q[0]}" cy="${q[1]}" r="5" fill="${colors[i%colors.length]}" stroke="#111114" stroke-width="2"/>`).join('')}`} svg.innerHTML=html;}
+    $('#addUser').onclick=()=>{$('#userName').value='';$('#userDialog').showModal();setTimeout(()=>$('#userName').focus(),50)};
+    $('#userForm').addEventListener('submit',e=>{if(e.submitter.value==='cancel')return; e.preventDefault();const name=$('#userName').value.trim();if(!name)return;people.push({id:crypto.randomUUID(),name,scores:[]});save();$('#userDialog').close();renderHome()});
+    $('#addScore').onclick=()=>{$('#score').value='';$('#scoreDialog').showModal();setTimeout(()=>$('#score').focus(),50)};
+    $('#scoreForm').addEventListener('submit',e=>{if(e.submitter.value==='cancel')return;e.preventDefault();const value=Number($('#score').value);if(!Number.isFinite(value))return;current.scores.push({value,at:Date.now()});save();$('#scoreDialog').close();renderDetail()});
+    $('#back').onclick=()=>{$('#detail').style.display='none';$('#home').style.display='block';current=null;renderHome()};
+    try{people=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(people))people=[]}catch(e){people=[]}
+    setTimeout(()=>{$('#loading').style.opacity='0';setTimeout(()=>$('#loading').remove(),260);renderHome()},500);
+    if(document.modelContext?.registerTool){ const ctl=new AbortController(); document.modelContext.registerTool({name:'add_game_score',title:'게임 점수 기록',description:'사용자에게 새 게임 점수를 추가하고 평균 순위를 갱신합니다.',inputSchema:{type:'object',properties:{name:{type:'string'},score:{type:'number'}},required:['name','score'],additionalProperties:false},async execute(input){const p=people.find(x=>x.name===input.name);if(!p)throw new Error('사용자를 찾을 수 없습니다.');p.scores.push({value:input.score,at:Date.now()});save();renderHome();if(current?.id===p.id)renderDetail();return {name:p.name,score:input.score,average:average(p)}}},{signal:ctl.signal}); }
+  </script>
+  <script src="./supabase-config.js"></script>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const colors=['#ffdc36','#f85a91','#7557ee','#35cbe6','#8ddb62','#ff9e4a'];
+    const config=window.__SUPABASE_CONFIG__ || {};
+    const $=s=>document.querySelector(s);
+    let people=[], current=null, supabase=null;
+    const esc=s=>{const d=document.createElement('div');d.textContent=s;return d.innerHTML};
+    const fmt=n=>Math.round(n).toLocaleString('ko-KR');
+    const average=p=>p.scores.length?p.scores.reduce((a,b)=>a+b.value,0)/p.scores.length:0;
+    function showToast(message='저장에 실패했어요.'){ $('#toast span').textContent=message; $('#toast').style.display='grid'; setTimeout(()=>$('#toast').style.display='none',2500); }
+    function hideLoading(){const l=$('#loading');l.style.opacity='0';setTimeout(()=>l.remove(),260)}
+    function setListMessage(message){$('#list').innerHTML='';$('#empty').innerHTML=message;$('#empty').style.display='block'}
+    function renderHome(){
+      const sorted=[...people].sort((a,b)=>average(b)-average(a));
+      $('#count').textContent=people.length?`${people.length}명`:' ';
+      $('#empty').innerHTML='<strong>아직 사용자가 없어요.</strong>오른쪽 위 <b>+</b>를 눌러 친구를 추가하세요.';
+      $('#empty').style.display=people.length?'none':'block';
+      $('#list').innerHTML=sorted.map((p,i)=>`<button class="person" data-id="${p.id}" style="--person-color:${colors[i%colors.length]}"><span class="rank">${i+1}</span><span class="person-main"><span class="name">${esc(p.name)}</span><span class="sub">${p.scores.length?`${p.scores.length}개의 기록`:'기록 없음'}</span></span><span class="avg"><small>평균</small>${p.scores.length?fmt(average(p)):'—'}</span></button>`).join('');
+      document.querySelectorAll('.person').forEach(b=>b.onclick=()=>openDetail(b.dataset.id));
+    }
+    async function loadPeople(){
+      const {data,error}=await supabase.from('players').select('id,name,created_at,game_scores(id,score,played_at)').order('created_at');
+      if(error) throw error;
+      people=(data||[]).map(p=>({...p,scores:(p.game_scores||[]).map(s=>({id:s.id,value:s.score,at:s.played_at})).sort((a,b)=>new Date(a.at)-new Date(b.at))}));
+    }
+    async function refresh(){
+      try { await loadPeople(); if(current) current=people.find(p=>p.id===current.id)||null; renderHome(); if(current) renderDetail(); }
+      catch(error){ console.error(error); setListMessage(`<strong>점수판을 불러오지 못했어요.</strong>${esc(error.message || '잠시 후 다시 시도해 주세요.')}`); showToast('데이터를 불러오지 못했어요.'); }
+    }
+    function openDetail(id){current=people.find(p=>p.id===id);if(!current)return;$('#home').style.display='none';$('#detail').style.display='block';$('#detailName').textContent=current.name;renderDetail()}
+    function renderDetail(){
+      const scores=current.scores.map(x=>x.value), has=scores.length;
+      $('#mean').textContent=has?fmt(average(current)):'—'; $('#max').textContent=has?fmt(Math.max(...scores)):'—'; $('#min').textContent=has?fmt(Math.min(...scores)):'—'; $('#noScores').style.display=has?'none':'block';
+      $('#history').innerHTML=has?`<h3>기록 ${scores.length}개</h3>${[...current.scores].reverse().map((x,i)=>`<div class="score-row"><span>${new Date(x.at).toLocaleDateString('ko-KR',{month:'long',day:'numeric'})} · 최근 ${i+1}번째</span><span class="score-actions"><b>${fmt(x.value)}점</b><button class="icon-action edit-score" data-id="${x.id}" aria-label="점수 수정">편집</button><button class="icon-action danger delete-score" data-id="${x.id}" aria-label="점수 삭제">삭제</button></span></div>`).join('')}`:'';
+      document.querySelectorAll('.edit-score').forEach(b=>b.onclick=()=>editScore(b.dataset.id)); document.querySelectorAll('.delete-score').forEach(b=>b.onclick=()=>deleteScore(b.dataset.id)); drawChart(scores);
+    }
+    function drawChart(values){const svg=$('#chart');if(!values.length){svg.innerHTML='';return}const w=600,h=205,p=25,min=Math.min(...values),max=Math.max(...values),range=max-min||1,pts=values.map((v,i)=>[p+(w-p*2)*(values.length===1?.5:i/(values.length-1)),h-p-(h-p*2)*(v-min)/range]);let html=`<defs><linearGradient id="rainbow" x1="0" x2="1"><stop stop-color="#f85a91"/><stop offset=".25" stop-color="#ff9e4a"/><stop offset=".5" stop-color="#ffdc36"/><stop offset=".75" stop-color="#35cbe6"/><stop offset="1" stop-color="#7557ee"/></linearGradient></defs><path d="M${p} ${h-p}H${w-p}" stroke="#e5e5e5"/><path d="M${p} ${p}H${w-p}" stroke="#e5e5e5"/>`;if(values.length===1)html+=`<circle cx="${pts[0][0]}" cy="${pts[0][1]}" r="8" fill="#7557ee" stroke="#111114" stroke-width="2"/>`;else html+=`<path d="M${pts.map(q=>q.join(' ')).join(' L')}" fill="none" stroke="url(#rainbow)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>${pts.map((q,i)=>`<circle cx="${q[0]}" cy="${q[1]}" r="5" fill="${colors[i%colors.length]}" stroke="#111114" stroke-width="2"/>`).join('')}`;svg.innerHTML=html}
+    async function mutate(action){try{await action();await refresh()}catch(error){console.error(error);showToast(error.message||'저장에 실패했어요.')}}
+    $('#addUser').onclick=()=>{$('#userName').value='';$('#userDialog').showModal();setTimeout(()=>$('#userName').focus(),50)};
+    $('#userForm').addEventListener('submit',e=>{if(e.submitter.value==='cancel')return;e.preventDefault();const name=$('#userName').value.trim();if(!name)return;mutate(async()=>{const {error}=await supabase.from('players').insert({name});if(error)throw error;$('#userDialog').close()})});
+    $('#addScore').onclick=()=>{$('#score').value='';$('#scoreDialog').showModal();setTimeout(()=>$('#score').focus(),50)};
+    $('#scoreForm').addEventListener('submit',e=>{if(e.submitter.value==='cancel')return;e.preventDefault();const score=Number($('#score').value);if(!Number.isInteger(score))return;mutate(async()=>{const {error}=await supabase.from('game_scores').insert({player_id:current.id,score});if(error)throw error;$('#scoreDialog').close()})});
+    $('#editPlayer').onclick=()=>{const name=prompt('새 이름을 입력하세요.',current.name);if(name===null||!name.trim())return;mutate(async()=>{const {error}=await supabase.from('players').update({name:name.trim()}).eq('id',current.id);if(error)throw error})};
+    $('#deletePlayer').onclick=()=>{if(!confirm(`${current.name}님과 모든 점수 기록을 삭제할까요?`))return;mutate(async()=>{const {error}=await supabase.from('players').delete().eq('id',current.id);if(error)throw error;current=null;$('#detail').style.display='none';$('#home').style.display='block'})};
+    function editScore(id){const item=current.scores.find(s=>s.id===id),value=prompt('점수를 입력하세요.',item?.value);if(value===null||!Number.isInteger(Number(value)))return;mutate(async()=>{const {error}=await supabase.from('game_scores').update({score:Number(value)}).eq('id',id);if(error)throw error})}
+    function deleteScore(id){if(!confirm('이 점수 기록을 삭제할까요?'))return;mutate(async()=>{const {error}=await supabase.from('game_scores').delete().eq('id',id);if(error)throw error})}
+    $('#back').onclick=()=>{$('#detail').style.display='none';$('#home').style.display='block';current=null;renderHome()};
+    if(!config.url || !config.anonKey){setListMessage('<strong>Supabase 설정이 필요해요.</strong>배포 환경에 VITE_SUPABASE_URL과 VITE_SUPABASE_ANON_KEY를 설정한 뒤, 공개 값을 window.__SUPABASE_CONFIG__로 주입하세요.');hideLoading()}
+    else {supabase=createClient(config.url,config.anonKey);await refresh();hideLoading()}
+  </script>
+</body>
+</html>
